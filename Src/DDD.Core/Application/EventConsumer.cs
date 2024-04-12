@@ -338,6 +338,7 @@ namespace DDD.Core.Application
             var context = MessageContext.CancellableContext(this.CancellationToken);
             context.AddEvent(@event);
             context.AddFailedStream(stream);
+            context.AddBoundedContext(this.Context);
             return context;
         }
 
@@ -346,6 +347,7 @@ namespace DDD.Core.Application
             var context = MessageContext.CancellableContext(this.CancellationToken);
             context.AddEvent(@event);
             context.AddStream(stream);
+            context.AddBoundedContext(this.Context);
             return context;
         }
 
