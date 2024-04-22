@@ -205,10 +205,10 @@ namespace DDD.Core.Infrastructure.DependencyInjection
             var registerOptions = new TypesToRegisterOptions { IncludeGenericTypeDefinitions = true };
             container.RegisterConditional(typeof(ISyncCommandHandler<,>), options.AssembliesToScan, options.TypeFilter, registerOptions);
             container.RegisterDecorator(typeof(ISyncCommandHandler<,>), typeof(SyncCommandHandlerWithLogging<,>));
-            container.RegisterDecorator(typeof(ISyncCommandHandler<,>), typeof(ThreadScopedCommandHandler<,>), Lifestyle.Singleton);
+            container.RegisterDecorator(typeof(ISyncCommandHandler<,>), typeof(ThreadScopedCommandHandler<,>), Lifestyle.Singleton, MustBeDecoratedWithScope);
             container.RegisterConditional(typeof(IAsyncCommandHandler<,>), options.AssembliesToScan, options.TypeFilter, registerOptions);
             container.RegisterDecorator(typeof(IAsyncCommandHandler<,>), typeof(AsyncCommandHandlerWithLogging<,>));
-            container.RegisterDecorator(typeof(IAsyncCommandHandler<,>), typeof(AsyncScopedCommandHandler<,>), Lifestyle.Singleton);
+            container.RegisterDecorator(typeof(IAsyncCommandHandler<,>), typeof(AsyncScopedCommandHandler<,>), Lifestyle.Singleton, MustBeDecoratedWithScope);
             container.RegisterConditional(typeof(ISyncCommandHandler<>), options.AssembliesToScan, options.TypeFilter);
             container.RegisterDecorator(typeof(ISyncCommandHandler<>), typeof(SyncCommandHandlerWithLogging<>));
             container.RegisterDecorator(typeof(ISyncCommandHandler<>), typeof(ThreadScopedCommandHandler<>), Lifestyle.Singleton);
@@ -322,6 +322,16 @@ namespace DDD.Core.Infrastructure.DependencyInjection
         {
             foreach (var scheduleFactory in options.SchedulesFactories)
                 container.Collection.Append(scheduleFactory, Lifestyle.Singleton);
+        }
+
+        private static bool MustBeDecoratedWithScope(DecoratorPredicateContext context)
+        {
+            var commandType = context.ServiceType.GenericTypeArguments[0];
+            if (commandType == typeof(UpdateEventStreamPosition))
+                return false;
+            if (commandType == typeof(UpdateFailedEventStreamPosition))
+                return false;
+            return true;
         }
 
         #endregion Methods
