@@ -47,9 +47,9 @@ namespace DDD.Core.Infrastructure.DependencyInjection
 
         public async Task HandleAsync(TCommand command, IMessageContext context)
         {
+            await new SynchronizationContextRemover();
             using (AsyncScopedLifestyle.BeginScope(container))
             {
-                await new SynchronizationContextRemover();
                 var handler = this.handlerProvider();
                 await handler.HandleAsync(command, context);
             }

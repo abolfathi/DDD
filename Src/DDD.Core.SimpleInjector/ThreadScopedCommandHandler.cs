@@ -43,14 +43,18 @@ namespace DDD.Core.Infrastructure.DependencyInjection
             Ensure.That(context, nameof(context)).IsNotNull();
             using (ThreadScopedLifestyle.BeginScope(container))
             {
-                using (var scope = new TransactionScope())
+                var handler = this.handlerProvider();
+                if (context.IsEventHandling()) // Exception to the rule "One transaction per command" to avoid to handle the same event more than once
                 {
-                    var handler = this.handlerProvider();
-                    handler.Handle(command, context);
-                    if (context.IsEventHandling()) // Exception to the rule "One transaction per command" to avoid to handle the same event more than once
+                    using (var scope = new TransactionScope())
+                    {
+                        handler.Handle(command, context);
                         UpdateEventStreamPosition(context);
-                    scope.Complete();
+                        scope.Complete();
+                    }
                 }
+                else
+                    handler.Handle(command, context);
             }
         }
 

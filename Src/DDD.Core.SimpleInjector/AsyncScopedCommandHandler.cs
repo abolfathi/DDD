@@ -46,14 +46,18 @@ namespace DDD.Core.Infrastructure.DependencyInjection
             await new SynchronizationContextRemover();
             using (AsyncScopedLifestyle.BeginScope(container))
             {
-                using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                var handler = this.handlerProvider();
+                if (context.IsEventHandling()) // Exception to the rule "One transaction per command" to avoid to handle the same event more than once
                 {
-                    var handler = this.handlerProvider();
-                    await handler.HandleAsync(command, context);
-                    if (context.IsEventHandling()) // Exception to the rule "One transaction per command" to avoid to handle the same event more than once
+                    using (var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                    {
+                        await handler.HandleAsync(command, context);
                         await UpdateEventStreamPositionAsync(context);
-                    scope.Complete();
+                        scope.Complete();
+                    }
                 }
+                else
+                    await handler.HandleAsync(command, context);
             }
         }
 

@@ -39,9 +39,9 @@ namespace DDD.Core.Infrastructure.DependencyInjection
 
         public async Task<TResult> HandleAsync(TQuery query, IMessageContext context)
         {
+            await new SynchronizationContextRemover();
             using (AsyncScopedLifestyle.BeginScope(container))
             {
-                await new SynchronizationContextRemover();
                 var handler = this.handlerProvider();
                 return await handler.HandleAsync(query, context);
             }
